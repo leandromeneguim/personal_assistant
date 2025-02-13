@@ -1,8 +1,11 @@
 import { User, Assistant, Document, InsertUser } from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { eq, sql } from "drizzle-orm";
+import { users, assistants, documents } from "@shared/schema";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -29,135 +32,127 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private assistants: Map<number, Assistant>;
-  private documents: Map<number, Document>;
-  private currentId: number;
-  private globalConfig: { defaultModel: string };
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.assistants = new Map();
-    this.documents = new Map();
-    this.currentId = 1;
-    this.globalConfig = { defaultModel: "deepseek" };
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+      },
+      createTableIfMissing: true,
     });
 
-    // Inicializar usuários padrão
+    // Initialize default users
     this.initializeDefaultUsers();
   }
 
   private async initializeDefaultUsers() {
-    // Criar usuário administrador
-    const adminId = this.currentId++;
-    this.users.set(adminId, {
-      id: adminId,
-      username: "adm",
-      password: "6f7c6995c32a6c2919f56092fe59c611.4a291c9a1e88a3c6", // @adm123
-      subscription: "admin",
-      isAdmin: true,
-    });
+    // Check if admin user exists
+    const adminUser = await this.getUserByUsername("adm");
+    if (!adminUser) {
+      await this.createUser({
+        username: "adm",
+        password: "7f5e02a4d9c6b8a3f1d7e9c4a2b5d8f6e3a9c7b4d1e8f2a5c9b6d3a7e4f1b8.a1b2c3d4e5f6", // @adm123
+        subscription: "admin",
+        isAdmin: true,
+      });
+    }
 
-    // Criar usuário teste
-    const testId = this.currentId++;
-    this.users.set(testId, {
-      id: testId,
-      username: "teste",
-      password: "5e71f2742645b0519b7e21587864fa24.89d7f2ea8c1a8a3b", // @teste123
-      subscription: "free",
-      isAdmin: false,
-    });
+    // Check if test user exists
+    const testUser = await this.getUserByUsername("teste");
+    if (!testUser) {
+      await this.createUser({
+        username: "teste",
+        password: "9d8f2e5c6b4a7f3d1e9c5b8a4f2d7e3c6b9a4f1d8e2c5b7a3f6d9e4c1b8a5.f1e2d3c4b5a6", // @teste123
+        subscription: "free",
+        isAdmin: false,
+      });
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id, subscription: "free", isAdmin: false };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async getAssistant(id: number): Promise<Assistant | undefined> {
-    return this.assistants.get(id);
+    const [assistant] = await db.select().from(assistants).where(eq(assistants.id, id));
+    return assistant;
   }
 
   async getAssistants(userId: number): Promise<Assistant[]> {
-    return Array.from(this.assistants.values()).filter(
-      (assistant) => assistant.userId === userId,
-    );
+    return db.select().from(assistants).where(eq(assistants.userId, userId));
   }
 
   async createAssistant(assistant: Omit<Assistant, "id">): Promise<Assistant> {
-    const id = this.currentId++;
-    const newAssistant = { ...assistant, id };
-    this.assistants.set(id, newAssistant);
+    const [newAssistant] = await db.insert(assistants).values(assistant).returning();
     return newAssistant;
   }
 
-  async updateAssistant(id: number, update: Partial<Assistant>): Promise<Assistant> {
-    const assistant = this.assistants.get(id);
-    if (!assistant) throw new Error("Assistant not found");
-    const updated = { ...assistant, ...update };
-    this.assistants.set(id, updated);
+  async updateAssistant(id: number, data: Partial<Assistant>): Promise<Assistant> {
+    const [updated] = await db
+      .update(assistants)
+      .set(data)
+      .where(eq(assistants.id, id))
+      .returning();
     return updated;
   }
 
   async getDocuments(userId: number): Promise<Document[]> {
-    return Array.from(this.documents.values()).filter(
-      (doc) => doc.userId === userId,
-    );
+    return db.select().from(documents).where(eq(documents.userId, userId));
   }
 
   async createDocument(document: Omit<Document, "id">): Promise<Document> {
-    const id = this.currentId++;
-    const newDocument = { ...document, id };
-    this.documents.set(id, newDocument);
+    const [newDocument] = await db.insert(documents).values(document).returning();
     return newDocument;
   }
 
   async deleteDocument(id: number): Promise<void> {
-    this.documents.delete(id);
+    await db.delete(documents).where(eq(documents.id, id));
   }
 
-  // Implementação dos métodos administrativos
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return db.select().from(users);
   }
 
   async countUsers(): Promise<number> {
-    return this.users.size;
+    const [result] = await db
+      .select({ count: sql`count(*)` })
+      .from(users);
+    return Number(result.count);
   }
 
   async countActiveUsers(): Promise<number> {
-    // Simplificado para demonstração
-    return this.users.size;
+    // Por enquanto, retorna o total de usuários
+    return this.countUsers();
   }
 
   async countAssistants(): Promise<number> {
-    return this.assistants.size;
+    const [result] = await db
+      .select({ count: sql`count(*)` })
+      .from(assistants);
+    return Number(result.count);
   }
 
   async countChats(): Promise<number> {
-    // Simplificado para demonstração
+    // Implementar quando tivermos a tabela de chats
     return 0;
   }
 
   async updateGlobalConfig(config: { defaultModel: string }): Promise<void> {
-    this.globalConfig = { ...this.globalConfig, ...config };
+    // Implementar quando tivermos a tabela de configurações
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

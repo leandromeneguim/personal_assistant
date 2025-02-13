@@ -17,15 +17,33 @@ const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 16)) as Buffer;
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
   const [hashed, salt] = stored.split(".");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 16)) as Buffer;
-  const storedBuf = Buffer.from(hashed, "hex");
-  return storedBuf.length === suppliedBuf.length && timingSafeEqual(storedBuf, suppliedBuf);
+  if (!hashed || !salt) {
+    console.log("Invalid hash format:", stored);
+    return false;
+  }
+
+  try {
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const result = timingSafeEqual(hashedBuf, suppliedBuf);
+
+    if (!result) {
+      console.log("Password comparison failed");
+      console.log("Supplied hash:", suppliedBuf.toString("hex"));
+      console.log("Stored hash:", hashed);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -84,9 +102,12 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Usuário já existe" });
       }
 
+      const hashedPassword = await hashPassword(req.body.password);
+      console.log("Created user with hash:", hashedPassword);
+
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
+        password: hashedPassword,
       });
 
       req.login(user, (err) => {
