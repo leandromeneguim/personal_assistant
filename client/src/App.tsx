@@ -6,6 +6,7 @@ import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { ProtectedAdminRoute } from "./lib/protected-admin-route";
 import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/landing-page";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import Chat from "@/pages/chat";
@@ -17,8 +18,9 @@ import AdminDashboard from "@/pages/admin";
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/chat" component={Chat} />
       <ProtectedRoute path="/documents" component={Documents} />
       <ProtectedRoute path="/settings" component={Settings} />

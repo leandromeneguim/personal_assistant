@@ -46,6 +46,31 @@ export class MemStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
+
+    // Inicializar usuários padrão
+    this.initializeDefaultUsers();
+  }
+
+  private async initializeDefaultUsers() {
+    // Criar usuário administrador
+    const adminId = this.currentId++;
+    this.users.set(adminId, {
+      id: adminId,
+      username: "adm",
+      password: "87c1b128a9c7fd417c8698a80b69f18443371a828edc1571cf3c153b5dd2c7f3.4a291c9a1e88a3c6", // @adm123
+      subscription: "admin",
+      isAdmin: true,
+    });
+
+    // Criar usuário teste
+    const testId = this.currentId++;
+    this.users.set(testId, {
+      id: testId,
+      username: "teste",
+      password: "5e71f2742645b0519b7e21587864fa2485520c283566fb2f46001ee47db7788c.89d7f2ea8c1a8a3b", // @teste123
+      subscription: "free",
+      isAdmin: false,
+    });
   }
 
   async getUser(id: number): Promise<User | undefined> {
