@@ -57,7 +57,7 @@ export class MemStorage implements IStorage {
     this.users.set(adminId, {
       id: adminId,
       username: "adm",
-      password: "87c1b128a9c7fd417c8698a80b69f18443371a828edc1571cf3c153b5dd2c7f3.4a291c9a1e88a3c6", // @adm123
+      password: "cd36b370a5a3bdd19b8798f6bd6ea6364ce52d516b51c95c5f6b9e883c8b3088.f8e1c0a45dd64c881f6d3c825360b684", // @adm123
       subscription: "admin",
       isAdmin: true,
     });
@@ -67,7 +67,7 @@ export class MemStorage implements IStorage {
     this.users.set(testId, {
       id: testId,
       username: "teste",
-      password: "5e71f2742645b0519b7e21587864fa2485520c283566fb2f46001ee47db7788c.89d7f2ea8c1a8a3b", // @teste123
+      password: "d9a7921f41b96b52c98d22339e947ed134f2d1659028f58b7e0bcec07e399c69.e42cde6bc0e9480ab62b9d87c995e8f9", // @teste123
       subscription: "free",
       isAdmin: false,
     });
