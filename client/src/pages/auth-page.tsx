@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,14 +35,22 @@ export default function AuthPage() {
     },
   });
 
-  if (user) {
-    setLocation("/");
-    return null;
-  }
+  // Usar useEffect para redirecionar após login bem-sucedido
+  useEffect(() => {
+    if (user) {
+      console.log("User authenticated, redirecting to dashboard", user);
+      setLocation("/dashboard");
+    }
+  }, [user, setLocation]);
 
   const handleForgotPassword = () => {
     // TODO: Implementar recuperação de senha
     alert("Em breve! Por favor, entre em contato com o suporte.");
+  };
+
+  const onSubmit = (data: any) => {
+    console.log("Attempting login with:", data.username);
+    loginMutation.mutate(data);
   };
 
   return (
@@ -61,9 +69,7 @@ export default function AuthPage() {
           <CardContent>
             <Form {...loginForm}>
               <form
-                onSubmit={loginForm.handleSubmit((data) =>
-                  loginMutation.mutate(data)
-                )}
+                onSubmit={loginForm.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
                 <FormField

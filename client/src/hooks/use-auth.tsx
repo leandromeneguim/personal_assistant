@@ -29,19 +29,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<SelectUser | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    onError: (error) => {
+      console.error("Error fetching user:", error);
+    },
+    onSuccess: (data) => {
+      console.log("User data fetched:", data);
+    },
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
+      console.log("Attempting login...");
       const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const data = await res.json();
+      console.log("Login response:", data);
+      return data;
     },
     onSuccess: (user: SelectUser) => {
+      console.log("Login successful, updating user data:", user);
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Login bem-sucedido",
+        description: "Bem-vindo de volta!",
+      });
     },
     onError: (error: Error) => {
+      console.error("Login error:", error);
       toast({
-        title: "Login failed",
+        title: "Erro no login",
         description: error.message,
         variant: "destructive",
       });
@@ -58,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: "Erro no registro",
         description: error.message,
         variant: "destructive",
       });
@@ -71,14 +86,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      toast({
+        title: "Logout realizado",
+        description: "Até logo!",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Logout failed",
+        title: "Erro ao sair",
         description: error.message,
         variant: "destructive",
       });
     },
+  });
+
+  console.log("AuthProvider state:", {
+    user: user ?? null,
+    isLoading,
+    error,
+    loginMutationPending: loginMutation.isPending,
   });
 
   return (
