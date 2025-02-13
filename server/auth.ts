@@ -15,30 +15,30 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
+export async function scryptHash(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  console.log("Comparing passwords...");
+  console.log("Stored hash:", stored);
+
   const [hashed, salt] = stored.split(".");
   if (!hashed || !salt) {
-    console.log("Invalid hash format:", stored);
+    console.log("Invalid hash format");
     return false;
   }
 
   try {
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     const hashedBuf = Buffer.from(hashed, "hex");
+    console.log("Supplied hash:", suppliedBuf.toString("hex"));
+    console.log("Stored hash:", hashed);
+
     const result = timingSafeEqual(hashedBuf, suppliedBuf);
-
-    if (!result) {
-      console.log("Password comparison failed");
-      console.log("Supplied hash:", suppliedBuf.toString("hex"));
-      console.log("Stored hash:", hashed);
-    }
-
+    console.log("Password match:", result);
     return result;
   } catch (error) {
     console.error("Error comparing passwords:", error);
@@ -65,18 +65,21 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log("Login attempt for user:", username);
         const user = await storage.getUserByUsername(username);
         if (!user) {
           console.log("User not found:", username);
           return done(null, false);
         }
 
+        console.log("Found user:", user.username);
         const isValid = await comparePasswords(password, user.password);
         if (!isValid) {
           console.log("Invalid password for user:", username);
           return done(null, false);
         }
 
+        console.log("Login successful for user:", username);
         return done(null, user);
       } catch (err) {
         console.error("Auth error:", err);
@@ -102,7 +105,7 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Usuário já existe" });
       }
 
-      const hashedPassword = await hashPassword(req.body.password);
+      const hashedPassword = await scryptHash(req.body.password);
       console.log("Created user with hash:", hashedPassword);
 
       const user = await storage.createUser({

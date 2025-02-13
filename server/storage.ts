@@ -4,6 +4,7 @@ import connectPg from "connect-pg-simple";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { users, assistants, documents } from "@shared/schema";
+import { scryptHash } from "./auth"; // Assuming scryptHash is defined here or imported
 
 const PostgresSessionStore = connectPg(session);
 
@@ -51,9 +52,10 @@ export class DatabaseStorage implements IStorage {
     // Check if admin user exists
     const adminUser = await this.getUserByUsername("adm");
     if (!adminUser) {
+      const hashedPassword = await scryptHash("@adm123");
       await this.createUser({
         username: "adm",
-        password: "7f5e02a4d9c6b8a3f1d7e9c4a2b5d8f6e3a9c7b4d1e8f2a5c9b6d3a7e4f1b8.a1b2c3d4e5f6", // @adm123
+        password: hashedPassword,
         subscription: "admin",
         isAdmin: true,
       });
@@ -62,9 +64,10 @@ export class DatabaseStorage implements IStorage {
     // Check if test user exists
     const testUser = await this.getUserByUsername("teste");
     if (!testUser) {
+      const hashedPassword = await scryptHash("@teste123");
       await this.createUser({
         username: "teste",
-        password: "9d8f2e5c6b4a7f3d1e9c5b8a4f2d7e3c6b9a4f1d8e2c5b7a3f6d9e4c1b8a5.f1e2d3c4b5a6", // @teste123
+        password: hashedPassword,
         subscription: "free",
         isAdmin: false,
       });
