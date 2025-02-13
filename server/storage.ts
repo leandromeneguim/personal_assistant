@@ -18,6 +18,14 @@ export interface IStorage {
   createDocument(document: Omit<Document, "id">): Promise<Document>;
   deleteDocument(id: number): Promise<void>;
 
+  // Métodos administrativos
+  getAllUsers(): Promise<User[]>;
+  countUsers(): Promise<number>;
+  countActiveUsers(): Promise<number>;
+  countAssistants(): Promise<number>;
+  countChats(): Promise<number>;
+  updateGlobalConfig(config: { defaultModel: string }): Promise<void>;
+
   sessionStore: session.Store;
 }
 
@@ -26,6 +34,7 @@ export class MemStorage implements IStorage {
   private assistants: Map<number, Assistant>;
   private documents: Map<number, Document>;
   private currentId: number;
+  private globalConfig: { defaultModel: string };
   sessionStore: session.Store;
 
   constructor() {
@@ -33,6 +42,7 @@ export class MemStorage implements IStorage {
     this.assistants = new Map();
     this.documents = new Map();
     this.currentId = 1;
+    this.globalConfig = { defaultModel: "deepseek" };
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
@@ -50,7 +60,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user: User = { ...insertUser, id, subscription: "free" };
+    const user: User = { ...insertUser, id, subscription: "free", isAdmin: false };
     this.users.set(id, user);
     return user;
   }
@@ -95,6 +105,33 @@ export class MemStorage implements IStorage {
 
   async deleteDocument(id: number): Promise<void> {
     this.documents.delete(id);
+  }
+
+  // Implementação dos métodos administrativos
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async countUsers(): Promise<number> {
+    return this.users.size;
+  }
+
+  async countActiveUsers(): Promise<number> {
+    // Simplificado para demonstração
+    return this.users.size;
+  }
+
+  async countAssistants(): Promise<number> {
+    return this.assistants.size;
+  }
+
+  async countChats(): Promise<number> {
+    // Simplificado para demonstração
+    return 0;
+  }
+
+  async updateGlobalConfig(config: { defaultModel: string }): Promise<void> {
+    this.globalConfig = { ...this.globalConfig, ...config };
   }
 }
 

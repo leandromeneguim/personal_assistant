@@ -7,19 +7,23 @@ import {
   FileText,
   Settings,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
-const navigation = [
-  { name: "Chat", href: "/chat", icon: MessageSquare },
-  { name: "Documents", href: "/documents", icon: FileText },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
-
 export function Sidebar() {
   const [location] = useLocation();
-  const { logoutMutation } = useAuth();
+  const { user, logoutMutation } = useAuth();
+
+  const navigation = [
+    { name: "Chat", href: "/chat", icon: MessageSquare },
+    { name: "Documents", href: "/documents", icon: FileText },
+    { name: "Calendar", href: "/calendar", icon: Calendar },
+    { name: "Settings", href: "/settings", icon: Settings },
+    ...(user?.isAdmin
+      ? [{ name: "Admin", href: "/admin", icon: ShieldCheck }]
+      : []),
+  ];
 
   return (
     <div className="flex h-full flex-col bg-sidebar px-3 py-4">

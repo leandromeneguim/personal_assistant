@@ -5,8 +5,36 @@ import { storage } from "./storage";
 import { insertAssistantSchema, insertDocumentSchema } from "@shared/schema";
 import { handleChat } from "./llm";
 
+function isAdmin(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+  if (!req.isAuthenticated()) return res.sendStatus(401);
+  if (!req.user?.isAdmin) return res.sendStatus(403);
+  next();
+}
+
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
+
+  // Rotas administrativas
+  app.get("/api/admin/stats", isAdmin, async (req, res) => {
+    const stats = {
+      totalUsers: await storage.countUsers(),
+      activeUsers: await storage.countActiveUsers(),
+      totalAssistants: await storage.countAssistants(),
+      totalChats: await storage.countChats(),
+    };
+    res.json(stats);
+  });
+
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  });
+
+  app.post("/api/admin/config", isAdmin, async (req, res) => {
+    const { defaultModel } = req.body;
+    await storage.updateGlobalConfig({ defaultModel });
+    res.sendStatus(200);
+  });
 
   // Assistants endpoints
   app.get("/api/assistants", async (req, res) => {
@@ -62,8 +90,9 @@ export function registerRoutes(app: Express): Server {
     try {
       const response = await handleChat(message, assistant);
       res.json({ response });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      res.status(500).json({ message });
     }
   });
 
