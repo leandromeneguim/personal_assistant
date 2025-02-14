@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -134,6 +136,15 @@ export default function AdminDashboard() {
                       setDefaultModel(value);
                       updateConfigMutation.mutate({ defaultModel: value });
                     }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o modelo padrão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="deepseek">DeepSeek</SelectItem>
+                      <SelectItem value="perplexity">Perplexity</SelectItem>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
 
@@ -172,17 +183,6 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 </div>
-              </div>
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o modelo padrão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="deepseek">DeepSeek</SelectItem>
-                    <SelectItem value="perplexity">Perplexity</SelectItem>
-                    <SelectItem value="openai">OpenAI</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardContent>
           </Card>
