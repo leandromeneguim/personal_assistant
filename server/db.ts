@@ -33,3 +33,7 @@ if (!tablesExist) {
   const migrationQuery = readFileSync(join(__dirname, 'migrations/0000_initial.sql'), 'utf-8');
   await pool.query(migrationQuery);
 }
+
+// Run the is_active migration
+const isActiveMigration = readFileSync(join(__dirname, 'migrations/0001_add_is_active.sql'), 'utf-8');
+await pool.query(isActiveMigration);
