@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -16,6 +17,9 @@ export default function Settings() {
   const [isCreatingAssistant, setIsCreatingAssistant] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [personality, setPersonality] = useState("");
+  const [modelType, setModelType] = useState("deepseek"); // Default model type
+  const [temperature, setTemperature] = useState(0.5); // Default creativity level
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   const createAssistantMutation = useMutation({
@@ -31,6 +35,9 @@ export default function Settings() {
       setIsCreatingAssistant(false);
       setName("");
       setDescription("");
+      setPersonality("");
+      setModelType("deepseek"); //Reset to default
+      setTemperature(0.5); //Reset to default
       setSelectedFiles(null);
     },
   });
@@ -89,15 +96,41 @@ export default function Settings() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Descrição</label>
+                <label className="text-sm font-medium">Personalidade</label>
                 <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descrição do assistente"
+                  value={personality}
+                  onChange={(e) => setPersonality(e.target.value)}
+                  placeholder="Ex: Profissional, Amigável, Técnico..."
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Documentos</label>
+                <label className="text-sm font-medium">Modelo de IA</label>
+                <Select value={modelType} onValueChange={setModelType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deepseek">DeepSeek (Recomendado)</SelectItem>
+                    <SelectItem value="openai">OpenAI GPT-4</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Criatividade</label>
+                <div className="flex items-center gap-4">
+                  <Slider 
+                    value={[temperature]} 
+                    onValueChange={(value) => setTemperature(value[0])}
+                    min={0} 
+                    max={1} 
+                    step={0.1}
+                    className="flex-1"
+                  />
+                  <span className="text-sm w-12">{temperature}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Documentos de Treinamento</label>
                 <Input
                   type="file"
                   multiple
@@ -110,6 +143,9 @@ export default function Settings() {
                   const formData = new FormData();
                   formData.append("name", name);
                   formData.append("description", description);
+                  formData.append("personality", personality);
+                  formData.append("model_type", modelType);
+                  formData.append("temperature", temperature.toString());
                   if (selectedFiles) {
                     for (let i = 0; i < selectedFiles.length; i++) {
                       formData.append("files", selectedFiles[i]);
