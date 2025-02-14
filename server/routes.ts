@@ -21,9 +21,8 @@ export function registerRoutes(app: Express) {
   });
 
   app.get("/api/user", async (req, res) => {
-    const user = await storage.getCurrentUser(req);
-    if (user) {
-      res.json(user);
+    if (req.isAuthenticated()) {
+      res.json(req.user);
     } else {
       res.status(401).json({ message: "Not authenticated" });
     }
