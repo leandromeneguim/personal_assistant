@@ -25,3 +25,11 @@ CREATE TABLE documents (
   content TEXT NOT NULL,
   type TEXT NOT NULL
 );
+
+DROP TABLE IF EXISTS session;
+CREATE TABLE session (
+  sid varchar NOT NULL COLLATE "default",
+  sess json NOT NULL,
+  expire timestamp(6) NOT NULL,
+  CONSTRAINT session_pkey PRIMARY KEY (sid)
+);
