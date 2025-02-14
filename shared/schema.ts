@@ -26,7 +26,9 @@ export const assistants = pgTable("assistants", {
   userId: integer("user_id").notNull(),
   name: text("name").notNull(),
   personality: text("personality").notNull(),
-  modelType: text("model_type").default("deepseek").notNull(), // 'deepseek', 'perplexity', 'openai'
+  modelType: text("model_type").default("deepseek").notNull(),
+  platforms: jsonb("platforms").default(['web']).notNull(),
+  status: text("status").default("active").notNull(),
   config: jsonb("config")
     .default({
       model: "deepseek-chat-67b",
@@ -34,7 +36,6 @@ export const assistants = pgTable("assistants", {
       maxTokens: 2000
     })
     .notNull(),
-  // Add fields for document association and platform integration here.  This requires a significant extension.
 });
 
 export const documents = pgTable("documents", {
@@ -61,6 +62,8 @@ export const insertAssistantSchema = createInsertSchema(assistants).pick({
   personality: true,
   modelType: true,
   config: true,
+  platforms: true,
+  status: true,
 }).extend({
   modelType: z.enum(["deepseek", "perplexity", "openai"]).default("deepseek"),
   config: z.object({
@@ -71,7 +74,9 @@ export const insertAssistantSchema = createInsertSchema(assistants).pick({
     model: "deepseek-chat-67b",
     temperature: 0.7,
     maxTokens: 2000
-  })
+  }),
+  platforms: z.array(z.string()).default(['web']),
+  status: z.enum(['active', 'inactive']).default('active')
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).pick({

@@ -15,6 +15,10 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCreatingAssistant, setIsCreatingAssistant] = useState(false);
+  const { data: assistants } = useQuery<Assistant[]>({
+    queryKey: ["/api/assistants"],
+  });
+  const [selectedPlatform, setSelectedPlatform] = useState(user?.allowedPlatforms?.[0] || 'web');
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [personality, setPersonality] = useState("");
@@ -71,12 +75,61 @@ export default function Settings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Criar Novo Assistente</CardTitle>
+              <CardTitle>Seus Atendentes ({assistants?.length || 0}/{user?.maxAssistants || 1})</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => setIsCreatingAssistant(true)}>
-                Criar Assistente
-              </Button>
+              {(assistants?.length || 0) < (user?.maxAssistants || 1) ? (
+                <Button onClick={() => setIsCreatingAssistant(true)} className="mb-4">
+                  Criar Novo Atendente
+                </Button>
+              ) : (
+                <p className="text-yellow-600 mb-4">Limite de atendentes atingido</p>
+              )}
+              
+              <div className="grid gap-4">
+                {assistants?.map((assistant) => (
+                  <Card key={assistant.id}>
+                    <CardContent className="pt-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-bold">{assistant.name}</h3>
+                          <p className="text-sm text-muted-foreground">{assistant.personality}</p>
+                        </div>
+                        <Button variant="outline" onClick={() => setLocation(`/chat?assistant=${assistant.id}`)}>
+                          Chat
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Integração com Redes Sociais</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Plataforma Ativa</label>
+                  <Select disabled value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a plataforma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="web">Web Chat</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                      <SelectItem value="instagram">Instagram</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Contate o suporte para ativar outras plataformas
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

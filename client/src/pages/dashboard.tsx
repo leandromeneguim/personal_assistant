@@ -85,7 +85,7 @@ export default function Dashboard() {
               <CardTitle>Seus Atendentes</CardTitle>
             </CardHeader>
             <CardContent>
-              {assistants?.length === 0 ? (
+              {!assistants || assistants.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   Você ainda não tem atendentes configurados.
                   <br />
