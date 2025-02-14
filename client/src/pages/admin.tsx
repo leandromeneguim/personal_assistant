@@ -200,6 +200,28 @@ const createUserMutation = useMutation({
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
+                <label className="text-sm font-medium">Status</label>
+                <div className={`text-sm mt-1 ${selectedUser?.isActive ? 'text-green-500' : 'text-red-500'}`}>
+                  {selectedUser?.isActive ? 'Ativo' : 'Inativo'}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Vencimento do Plano</label>
+                <Input
+                  type="date"
+                  value={selectedUser?.planEnd?.split('T')[0]}
+                  onChange={(e) =>
+                    selectedUser &&
+                    updateUserMutation.mutate({
+                      ...selectedUser,
+                      planEnd: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div>
                 <label className="text-sm font-medium">Plano</label>
                 <Select
                   value={selectedUser?.subscription}

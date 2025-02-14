@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false).notNull(),
   maxAssistants: integer("max_assistants").default(1).notNull(),
   allowedPlatforms: jsonb("allowed_platforms").default(['web']).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
 });
 
 export const assistants = pgTable("assistants", {

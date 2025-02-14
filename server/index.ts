@@ -1,5 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { storage } from "./storage";
+
+// Check plan status every day at midnight
+setInterval(async () => {
+  const now = new Date();
+  if (now.getHours() === 0 && now.getMinutes() === 0) {
+    await storage.checkAndUpdatePlanStatus();
+  }
+}, 60000); // Check every minute
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();

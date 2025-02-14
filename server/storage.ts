@@ -146,6 +146,26 @@ export class DatabaseStorage implements IStorage {
     return counts;
   }
 
+  async checkAndUpdatePlanStatus(): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select()
+      .from(users)
+      .where(sql`DATE(${users.planEnd}) <= ${today.toISOString()}`);
+
+    for (const user of result) {
+      await db
+        .update(users)
+        .set({ isActive: false })
+        .where(eq(users.id, user.id));
+    }
+  }
+
   async getTotalInteractions(): Promise<number> {
     // Implement chat interactions count
     return 0;
