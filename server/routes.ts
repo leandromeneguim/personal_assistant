@@ -48,6 +48,16 @@ export function registerRoutes(app: Express): Server {
     res.json({ success: true });
   });
 
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    const hashedPassword = await scryptHash(req.body.password);
+    const user = await storage.createUser({
+      ...req.body,
+      password: hashedPassword,
+      isAdmin: false,
+    });
+    res.json(user);
+  });
+
   // Assistants endpoints
   app.get("/api/assistants", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

@@ -59,6 +59,22 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/users"],
   });
 
+const [isCreatingUser, setIsCreatingUser] = useState(false);
+
+const createUserMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/admin/users", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Usuário criado com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setIsCreatingUser(false);
+    },
+  });
+
   const updateUserMutation = useMutation({
     mutationFn: async (data: {
       id: number;
@@ -139,9 +155,12 @@ export default function AdminDashboard() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Usuários</CardTitle>
-            <CardDescription>Gerenciar usuários e permissões</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Usuários</CardTitle>
+              <CardDescription>Gerenciar usuários e permissões</CardDescription>
+            </div>
+            <Button onClick={() => setIsCreatingUser(true)}>Criar Usuário</Button>
           </CardHeader>
           <CardContent>
             {isLoadingUsers ? (
@@ -248,6 +267,177 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isCreatingUser} onOpenChange={setIsCreatingUser}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Criar Novo Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Usuário</label>
+                <Input
+                  placeholder="Nome de usuário"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      username: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Senha</label>
+                <Input
+                  type="password"
+                  placeholder="Senha"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      password: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Empresa</label>
+                <Input
+                  placeholder="Nome da empresa"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      companyName: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      email: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Celular</label>
+                <Input
+                  placeholder="Celular"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      phone: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Instagram</label>
+                <Input
+                  placeholder="@usuario"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      instagram: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Telegram</label>
+                <Input
+                  placeholder="@usuario"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      telegram: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Forma de Pagamento</label>
+                <Select
+                  onValueChange={(value) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      paymentMethod: value,
+                    }
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                    <SelectItem value="bank_transfer">Transferência</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Plano</label>
+                <Select
+                  onValueChange={(value) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      subscription: value,
+                    }
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trial">Teste</SelectItem>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="yearly">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Início do Plano</label>
+                <Input
+                  type="date"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      planStart: e.target.value,
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Término do Plano</label>
+                <Input
+                  type="date"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      planEnd: e.target.value,
+                    }
+                  }
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsCreatingUser(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => createUserMutation.mutate(createUserMutation.variables)}
+                disabled={createUserMutation.isPending}
+              >
+                {createUserMutation.isPending ? "Criando..." : "Criar Usuário"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
