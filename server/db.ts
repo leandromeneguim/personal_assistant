@@ -13,3 +13,7 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
+
+// Execute migrations
+const migrationQuery = await import('./migrations/0000_initial.sql?raw');
+await pool.query(migrationQuery.default);
