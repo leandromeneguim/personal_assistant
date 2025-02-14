@@ -20,5 +20,16 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const migrationQuery = readFileSync(join(__dirname, 'migrations/0000_initial.sql'), 'utf-8');
-await pool.query(migrationQuery);
+const checkTableExists = async (tableName: string) => {
+  const result = await pool.query(
+    "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)",
+    [tableName]
+  );
+  return result.rows[0].exists;
+};
+
+const tablesExist = await checkTableExists('users');
+if (!tablesExist) {
+  const migrationQuery = readFileSync(join(__dirname, 'migrations/0000_initial.sql'), 'utf-8');
+  await pool.query(migrationQuery);
+}
