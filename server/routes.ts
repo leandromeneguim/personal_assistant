@@ -14,19 +14,21 @@ function isAdmin(req: Express.Request, res: Express.Response, next: Express.Next
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
-  // Rotas administrativas
   app.get("/api/admin/stats", isAdmin, async (req, res) => {
     const stats = {
       totalUsers: await storage.countUsers(),
       activeUsers: await storage.countActiveUsers(),
       totalAssistants: await storage.countAssistants(),
       totalChats: await storage.countChats(),
+      usersBySubscription: await storage.getUsersBySubscription(),
+      totalInteractions: await storage.getTotalInteractions(),
+      uniqueUsers: await storage.getUniqueUsers(),
     };
     res.json(stats);
   });
 
   app.get("/api/admin/users", isAdmin, async (req, res) => {
-    const users = await storage.getAllUsers();
+    const users = await storage.getAllUsersWithDetails();
     res.json(users);
   });
 
@@ -37,10 +39,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/admin/users/:id", isAdmin, async (req, res) => {
-    const { maxAssistants, allowedPlatforms } = req.body;
+    const { maxAssistants, allowedPlatforms, subscription } = req.body;
     await storage.updateUser(parseInt(req.params.id), {
       maxAssistants,
-      allowedPlatforms
+      allowedPlatforms,
+      subscription
     });
     res.json({ success: true });
   });

@@ -23,7 +23,10 @@ export interface IStorage {
   deleteDocument(id: number): Promise<void>;
 
   // Métodos administrativos
-  getAllUsers(): Promise<User[]>;
+  getAllUsersWithDetails(): Promise<User[]>;
+  getUsersBySubscription(): Promise<Record<string, number>>;
+  getTotalInteractions(): Promise<number>;
+  getUniqueUsers(): Promise<number>;
   countUsers(): Promise<number>;
   countActiveUsers(): Promise<number>;
   countAssistants(): Promise<number>;
@@ -125,8 +128,32 @@ export class DatabaseStorage implements IStorage {
     await db.delete(documents).where(eq(documents.id, id));
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return db.select().from(users);
+  async getAllUsersWithDetails(): Promise<User[]> {
+    const result = await db.select().from(users);
+    // Add additional user stats here when implementing metrics
+    return result;
+  }
+
+  async getUsersBySubscription(): Promise<Record<string, number>> {
+    const result = await db
+      .select({ subscription: users.subscription })
+      .from(users);
+
+    const counts: Record<string, number> = {};
+    result.forEach(user => {
+      counts[user.subscription] = (counts[user.subscription] || 0) + 1;
+    });
+    return counts;
+  }
+
+  async getTotalInteractions(): Promise<number> {
+    // Implement chat interactions count
+    return 0;
+  }
+
+  async getUniqueUsers(): Promise<number> {
+    // Implement unique users who had interactions
+    return 0;
   }
 
   async countUsers(): Promise<number> {

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Card,
   CardContent,
@@ -21,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 type Stats = {
@@ -28,30 +36,45 @@ type Stats = {
   activeUsers: number;
   totalAssistants: number;
   totalChats: number;
+  usersBySubscription: Record<string, number>;
+  totalInteractions: number;
+  uniqueUsers: number;
+};
+
+type UserDetails = User & {
+  interactions: number;
+  lastActive: string;
 };
 
 export default function AdminDashboard() {
   const { toast } = useToast();
-  const [defaultModel, setDefaultModel] = useState("deepseek");
+  const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
+  const { user: authUser } = useAuth();
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<Stats>({
     queryKey: ["/api/admin/stats"],
   });
 
-  const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
+  const { data: users, isLoading: isLoadingUsers } = useQuery<UserDetails[]>({
     queryKey: ["/api/admin/users"],
   });
 
-  const updateConfigMutation = useMutation({
-    mutationFn: async (data: { defaultModel: string }) => {
-      const res = await apiRequest("POST", "/api/admin/config", data);
-      return res.json();
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: {
+      id: number;
+      maxAssistants: number;
+      allowedPlatforms: string[];
+      subscription: string;
+    }) => {
+      return apiRequest("POST", `/api/admin/users/${data.id}`, data);
     },
     onSuccess: () => {
       toast({
         title: "Sucesso",
-        description: "Configurações atualizadas com sucesso",
+        description: "Usuário atualizado com sucesso",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setSelectedUser(null);
     },
   });
 
@@ -69,16 +92,16 @@ export default function AdminDashboard() {
       color: "text-green-500",
     },
     {
-      title: "Total de Atendentes",
-      value: stats?.totalAssistants ?? 0,
-      icon: Bot,
-      color: "text-purple-500",
-    },
-    {
-      title: "Total de Conversas",
-      value: stats?.totalChats ?? 0,
+      title: "Total de Interações",
+      value: stats?.totalInteractions ?? 0,
       icon: MessageSquare,
       color: "text-yellow-500",
+    },
+    {
+      title: "Usuários Únicos",
+      value: stats?.uniqueUsers ?? 0,
+      icon: Users,
+      color: "text-purple-500",
     },
   ];
 
@@ -115,118 +138,119 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" />
-                Configurações Globais
-              </CardTitle>
-              <CardDescription>
-                Configure as opções globais do sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Modelo de IA Padrão</label>
-                  <Select
-                    value={defaultModel}
-                    onValueChange={(value) => {
-                      setDefaultModel(value);
-                      updateConfigMutation.mutate({ defaultModel: value });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o modelo padrão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="deepseek">DeepSeek</SelectItem>
-                      <SelectItem value="perplexity">Perplexity</SelectItem>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Limite de Atendentes</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    defaultValue={user?.maxAssistants}
-                    onChange={(e) => updateUser({
-                      maxAssistants: parseInt(e.target.value)
-                    })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Plataformas Permitidas</label>
-                  <div className="space-y-2">
-                    {['web', 'whatsapp', 'telegram', 'messenger'].map((platform) => (
-                      <div key={platform} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={user?.allowedPlatforms?.includes(platform)}
-                          onCheckedChange={(checked) => {
-                            const platforms = [...(user?.allowedPlatforms || [])];
-                            if (checked) {
-                              platforms.push(platform);
-                            } else {
-                              const index = platforms.indexOf(platform);
-                              if (index > -1) platforms.splice(index, 1);
-                            }
-                            updateUser({ allowedPlatforms: platforms });
-                          }}
-                        />
-                        <label className="text-sm">{platform.charAt(0).toUpperCase() + platform.slice(1)}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Usuários</CardTitle>
+            <CardDescription>Gerenciar usuários e permissões</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingUsers ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Usuários Recentes
-              </CardTitle>
-              <CardDescription>
-                Lista dos últimos usuários registrados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingUsers ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {users?.slice(0, 5).map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-medium">{user.username}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {user.subscription}
-                        </div>
+            ) : (
+              <div className="space-y-4">
+                {users?.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div>
+                      <div className="font-medium">{user.username}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Plano: {user.subscription} • Atendentes: {user.maxAssistants}
                       </div>
-                      {user.isAdmin && (
-                        <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                          Admin
-                        </div>
-                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      Gerenciar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Gerenciar Usuário: {selectedUser?.username}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium">Plano</label>
+                <Select
+                  value={selectedUser?.subscription}
+                  onValueChange={(value) =>
+                    selectedUser &&
+                    updateUserMutation.mutate({
+                      ...selectedUser,
+                      subscription: value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trial">Período de Teste</SelectItem>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="yearly">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Limite de Atendentes</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={selectedUser?.maxAssistants}
+                  onChange={(e) =>
+                    selectedUser &&
+                    updateUserMutation.mutate({
+                      ...selectedUser,
+                      maxAssistants: parseInt(e.target.value),
+                    })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Plataformas Permitidas</label>
+                <div className="space-y-2">
+                  {['web', 'whatsapp', 'telegram', 'messenger'].map((platform) => (
+                    <div key={platform} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={selectedUser?.allowedPlatforms?.includes(platform)}
+                        onCheckedChange={(checked) => {
+                          if (!selectedUser) return;
+                          const platforms = [...(selectedUser.allowedPlatforms || [])];
+                          if (checked) {
+                            platforms.push(platform);
+                          } else {
+                            const index = platforms.indexOf(platform);
+                            if (index > -1) platforms.splice(index, 1);
+                          }
+                          updateUserMutation.mutate({
+                            ...selectedUser,
+                            allowedPlatforms: platforms,
+                          });
+                        }}
+                      />
+                      <label className="text-sm">
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </label>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
