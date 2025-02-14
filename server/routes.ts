@@ -49,13 +49,20 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/admin/users", isAdmin, async (req, res) => {
-    const hashedPassword = await scryptHash(req.body.password);
-    const user = await storage.createUser({
-      ...req.body,
-      password: hashedPassword,
-      isAdmin: false,
-    });
-    res.json(user);
+    try {
+      const hashedPassword = await scryptHash(req.body.password);
+      const user = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+        isAdmin: false,
+        maxAssistants: req.body.maxAssistants || 1,
+        allowedPlatforms: req.body.allowedPlatforms || ['web'],
+      });
+      res.json(user);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
   });
 
   // Assistants endpoints

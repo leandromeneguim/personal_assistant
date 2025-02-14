@@ -427,6 +427,43 @@ const createUserMutation = useMutation({
                   }
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantidade de Atendentes</label>
+                <Input
+                  type="number"
+                  min="1"
+                  onChange={(e) =>
+                    createUserMutation.variables = {
+                      ...createUserMutation.variables,
+                      maxAssistants: parseInt(e.target.value),
+                    }
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Plataformas Permitidas</label>
+                <div className="space-y-2">
+                  {['web', 'whatsapp', 'telegram', 'messenger'].map((platform) => (
+                    <div key={platform} className="flex items-center space-x-2">
+                      <Checkbox
+                        onCheckedChange={(checked) => {
+                          const currentPlatforms = createUserMutation.variables?.allowedPlatforms || [];
+                          const newPlatforms = checked 
+                            ? [...currentPlatforms, platform]
+                            : currentPlatforms.filter(p => p !== platform);
+                          createUserMutation.variables = {
+                            ...createUserMutation.variables,
+                            allowedPlatforms: newPlatforms,
+                          };
+                        }}
+                      />
+                      <label className="text-sm">
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsCreatingUser(false)}>
