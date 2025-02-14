@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, scryptHash } from "./auth";
 import { storage } from "./storage";
 import { insertAssistantSchema, insertDocumentSchema } from "@shared/schema";
 import { handleChat } from "./llm";
