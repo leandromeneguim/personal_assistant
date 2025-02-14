@@ -15,5 +15,10 @@ export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
 
 // Execute migrations
-const migrationQuery = await import('./migrations/0000_initial.sql?raw');
-await pool.query(migrationQuery.default);
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const migrationQuery = readFileSync(join(__dirname, 'migrations/0000_initial.sql'), 'utf-8');
+await pool.query(migrationQuery);
