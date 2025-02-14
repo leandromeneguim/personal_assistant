@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { storage } from "./storage";
+import { setupAuth } from "./auth";
 
 // Check plan status every day at midnight
 setInterval(async () => {
@@ -46,6 +47,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  setupAuth(app);
   const server = registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
