@@ -125,14 +125,54 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Modelo de IA Padrão</label>
-                <Select
-                  value={defaultModel}
-                  onValueChange={(value) => {
-                    setDefaultModel(value);
-                    updateConfigMutation.mutate({ defaultModel: value });
-                  }}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Modelo de IA Padrão</label>
+                  <Select
+                    value={defaultModel}
+                    onValueChange={(value) => {
+                      setDefaultModel(value);
+                      updateConfigMutation.mutate({ defaultModel: value });
+                    }}
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Limite de Atendentes</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    defaultValue={user?.maxAssistants}
+                    onChange={(e) => updateUser({
+                      maxAssistants: parseInt(e.target.value)
+                    })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Plataformas Permitidas</label>
+                  <div className="space-y-2">
+                    {['web', 'whatsapp', 'telegram', 'messenger'].map((platform) => (
+                      <div key={platform} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={user?.allowedPlatforms?.includes(platform)}
+                          onCheckedChange={(checked) => {
+                            const platforms = [...(user?.allowedPlatforms || [])];
+                            if (checked) {
+                              platforms.push(platform);
+                            } else {
+                              const index = platforms.indexOf(platform);
+                              if (index > -1) platforms.splice(index, 1);
+                            }
+                            updateUser({ allowedPlatforms: platforms });
+                          }}
+                        />
+                        <label className="text-sm">{platform.charAt(0).toUpperCase() + platform.slice(1)}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o modelo padrão" />

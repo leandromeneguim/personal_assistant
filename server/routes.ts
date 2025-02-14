@@ -36,6 +36,15 @@ export function registerRoutes(app: Express): Server {
     res.sendStatus(200);
   });
 
+  app.post("/api/admin/users/:id", isAdmin, async (req, res) => {
+    const { maxAssistants, allowedPlatforms } = req.body;
+    await storage.updateUser(parseInt(req.params.id), {
+      maxAssistants,
+      allowedPlatforms
+    });
+    res.json({ success: true });
+  });
+
   // Assistants endpoints
   app.get("/api/assistants", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

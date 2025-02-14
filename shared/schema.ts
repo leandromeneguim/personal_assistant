@@ -8,6 +8,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   subscription: text("subscription").default("free").notNull(),
   isAdmin: boolean("is_admin").default(false).notNull(),
+  maxAssistants: integer("max_assistants").default(1).notNull(),
+  allowedPlatforms: jsonb("allowed_platforms").default(['web']).notNull(),
 });
 
 export const assistants = pgTable("assistants", {
