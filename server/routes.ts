@@ -74,11 +74,35 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/assistants", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const parsed = insertAssistantSchema.parse(req.body);
+    const { platform, documentIds, ...rest } = req.body;
+    const parsed = insertAssistantSchema.parse(rest);
+
     const assistant = await storage.createAssistant({
       ...parsed,
       userId: req.user.id,
+      documentIds,
+      platform,
+      platformConfig: {
+        type: platform,
+        credentials: {}
+      }
     });
+
+    res.json(assistant);
+  });
+
+  app.post("/api/assistants/:id/platform", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const { platform, credentials } = req.body;
+
+    const assistant = await storage.updateAssistant(parseInt(req.params.id), {
+      platform,
+      platformConfig: {
+        type: platform,
+        credentials
+      }
+    });
+
     res.json(assistant);
   });
 

@@ -34,6 +34,7 @@ export const assistants = pgTable("assistants", {
       maxTokens: 2000
     })
     .notNull(),
+  // Add fields for document association and platform integration here.  This requires a significant extension.
 });
 
 export const documents = pgTable("documents", {
@@ -43,6 +44,12 @@ export const documents = pgTable("documents", {
   content: text("content").notNull(),
   type: text("type").notNull(),
 });
+
+export const assistantDocuments = pgTable('assistant_documents', {
+  assistantId: integer('assistant_id').references(() => assistants.id),
+  documentId: integer('document_id').references(() => documents.id),
+});
+
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -75,5 +82,5 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type Assistant = typeof assistants.$inferSelect;
+export type Assistant = typeof assistants.$inferSelect & { documentIds: number[]; platform: string; platformConfig: { type: string; credentials: { username?: string; token?: string; qrCode?: string; }; }; };
 export type Document = typeof documents.$inferSelect;
